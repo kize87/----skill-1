@@ -27,11 +27,17 @@ class ScriptContractsTest(unittest.TestCase):
 
         self.assertIn("latex_to_docx_math.py", skill)
         self.assertIn("visualization-strategy.md", skill)
-        self.assertIn("AI-style reviewer", skill)
+        # Richness QA loop with subagent replaced the older "AI-style reviewer"
+        # pass; we still want the SKILL.md to advertise an automated visual
+        # / quantitative review step before delivery.
+        self.assertIn("check_report_richness.py", skill)
+        self.assertIn("richness-check-prompt.md", skill)
 
     def test_visualization_references_exist(self):
         self.assertTrue((ROOT / "references" / "visualization-strategy.md").exists())
         self.assertTrue((ROOT / "references" / "visual-review-prompt.md").exists())
+        self.assertTrue((ROOT / "references" / "code-and-pseudocode.md").exists())
+        self.assertTrue((ROOT / "references" / "richness-check-prompt.md").exists())
 
 
 if __name__ == "__main__":

@@ -34,6 +34,96 @@ def paragraph(text):
     return f"<w:p><w:r><w:t>{text}</w:t></w:r></w:p>"
 
 
+def indented_paragraph(text):
+    return (
+        "<w:p>"
+        "<w:pPr><w:ind w:firstLine=\"720\"/></w:pPr>"
+        f"<w:r><w:t>{text}</w:t></w:r>"
+        "</w:p>"
+    )
+
+
+def three_line_table():
+    """Two-row Word table with three-line borders only."""
+    return (
+        "<w:tbl>"
+        "<w:tblPr>"
+        "<w:tblBorders>"
+        "<w:top w:val=\"single\" w:sz=\"12\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:bottom w:val=\"single\" w:sz=\"12\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:left w:val=\"nil\"/>"
+        "<w:right w:val=\"nil\"/>"
+        "<w:insideH w:val=\"nil\"/>"
+        "<w:insideV w:val=\"nil\"/>"
+        "</w:tblBorders>"
+        "</w:tblPr>"
+        "<w:tr>"
+        "<w:tc>"
+        "<w:tcPr>"
+        "<w:tcBorders>"
+        "<w:top w:val=\"single\" w:sz=\"12\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:bottom w:val=\"single\" w:sz=\"6\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:left w:val=\"nil\"/>"
+        "<w:right w:val=\"nil\"/>"
+        "<w:insideH w:val=\"nil\"/>"
+        "<w:insideV w:val=\"nil\"/>"
+        "</w:tcBorders>"
+        "</w:tcPr>"
+        "<w:p><w:r><w:t>Method</w:t></w:r></w:p>"
+        "</w:tc>"
+        "</w:tr>"
+        "<w:tr>"
+        "<w:tc>"
+        "<w:tcPr>"
+        "<w:tcBorders>"
+        "<w:top w:val=\"nil\"/>"
+        "<w:bottom w:val=\"single\" w:sz=\"12\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:left w:val=\"nil\"/>"
+        "<w:right w:val=\"nil\"/>"
+        "<w:insideH w:val=\"nil\"/>"
+        "<w:insideV w:val=\"nil\"/>"
+        "</w:tcBorders>"
+        "</w:tcPr>"
+        "<w:p><w:r><w:t>K-means</w:t></w:r></w:p>"
+        "</w:tc>"
+        "</w:tr>"
+        "</w:tbl>"
+    )
+
+
+def grid_table():
+    """Default Table-Grid style table (every border visible)."""
+    return (
+        "<w:tbl>"
+        "<w:tblPr>"
+        "<w:tblBorders>"
+        "<w:top w:val=\"single\" w:sz=\"4\"/>"
+        "<w:bottom w:val=\"single\" w:sz=\"4\"/>"
+        "<w:left w:val=\"single\" w:sz=\"4\"/>"
+        "<w:right w:val=\"single\" w:sz=\"4\"/>"
+        "<w:insideH w:val=\"single\" w:sz=\"4\"/>"
+        "<w:insideV w:val=\"single\" w:sz=\"4\"/>"
+        "</w:tblBorders>"
+        "</w:tblPr>"
+        "<w:tr>"
+        "<w:tc><w:p><w:r><w:t>Method</w:t></w:r></w:p></w:tc>"
+        "</w:tr>"
+        "<w:tr>"
+        "<w:tc><w:p><w:r><w:t>K-means</w:t></w:r></w:p></w:tc>"
+        "</w:tr>"
+        "</w:tbl>"
+    )
+
+
+def long_body_paragraphs(n, indented=True):
+    text = (
+        "This paragraph explains an aspect of the experiment in enough detail that "
+        "the validator treats it as a body paragraph candidate for indentation."
+    )
+    para = indented_paragraph if indented else paragraph
+    return [para(text) for _ in range(n)]
+
+
 def document_xml(*paragraphs):
     return """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
@@ -101,6 +191,95 @@ class ValidateReportDocxTest(unittest.TestCase):
 
         self.assertFalse(result.ok)
         self.assertIn("Raw LaTeX/math marker found: $", result.errors)
+
+    def test_three_line_table_passes(self):
+        module = load_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = pathlib.Path(tmp) / "tlt.docx"
+            make_docx(
+                docx,
+                document_xml(
+                    paragraph("Experimental Purposes and Requirements"),
+                    paragraph("2. Algorithms or Models Used"),
+                    paragraph("3. Experiment Contents and Process"),
+                    paragraph("4. Discussion and Conclusions"),
+                    paragraph("Table 1. Method comparison"),
+                    three_line_table(),
+                ),
+            )
+
+            result = module.validate_docx(docx)
+
+        # No three-line-table errors should appear.
+        for err in result.errors:
+            self.assertNotIn("three-line", err)
+
+    def test_grid_table_fails_three_line_check(self):
+        module = load_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = pathlib.Path(tmp) / "grid.docx"
+            make_docx(
+                docx,
+                document_xml(
+                    paragraph("Experimental Purposes and Requirements"),
+                    paragraph("2. Algorithms or Models Used"),
+                    paragraph("3. Experiment Contents and Process"),
+                    paragraph("4. Discussion and Conclusions"),
+                    paragraph("Table 1. Method comparison"),
+                    grid_table(),
+                ),
+            )
+
+            result = module.validate_docx(docx)
+
+        self.assertFalse(result.ok)
+        self.assertTrue(
+            any("three-line" in err for err in result.errors),
+            result.errors,
+        )
+
+    def test_missing_indent_fails(self):
+        module = load_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = pathlib.Path(tmp) / "noindent.docx"
+            make_docx(
+                docx,
+                document_xml(
+                    paragraph("Experimental Purposes and Requirements"),
+                    paragraph("2. Algorithms or Models Used"),
+                    paragraph("3. Experiment Contents and Process"),
+                    paragraph("4. Discussion and Conclusions"),
+                    *long_body_paragraphs(8, indented=False),
+                ),
+            )
+
+            result = module.validate_docx(docx)
+
+        self.assertFalse(result.ok)
+        self.assertTrue(
+            any("first-line indent" in err for err in result.errors),
+            result.errors,
+        )
+
+    def test_indented_body_passes(self):
+        module = load_module()
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = pathlib.Path(tmp) / "indented.docx"
+            make_docx(
+                docx,
+                document_xml(
+                    paragraph("Experimental Purposes and Requirements"),
+                    paragraph("2. Algorithms or Models Used"),
+                    paragraph("3. Experiment Contents and Process"),
+                    paragraph("4. Discussion and Conclusions"),
+                    *long_body_paragraphs(8, indented=True),
+                ),
+            )
+
+            result = module.validate_docx(docx)
+
+        for err in result.errors:
+            self.assertNotIn("first-line indent", err)
 
 
 if __name__ == "__main__":

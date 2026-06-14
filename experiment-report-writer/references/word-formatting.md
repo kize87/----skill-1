@@ -21,6 +21,25 @@
 - Use numbered headings such as `2.1`, `2.2`, `3.1`, `3.1.1`.
 - Keep spacing compact and consistent. Remove strange large spaces and empty paragraphs.
 
+## Paragraph indentation
+
+Body paragraphs use first-line indentation of **1.27cm (720 twentieths of a point)**, written as `<w:ind w:firstLine="720"/>` in OOXML. This is the IEEE / ACM convention and reads cleanly in mixed Chinese-English templates.
+
+Apply indentation to:
+
+- Plain narrative paragraphs in sections 1–4.
+- The first paragraph after a heading (do not skip the indent there; it makes the heading-to-body relationship clearer in printed reports).
+
+Do not indent:
+
+- Headings and subheading lines.
+- Figure captions, table captions, code/pseudocode captions.
+- The body of code/pseudocode blocks (use the dedicated code style instead).
+- Display equations and equation-number lines.
+- The first line inside a table cell.
+
+When you generate paragraphs through OOXML, set `w:ind` on the paragraph properties; do not simulate indentation with leading spaces or tab characters.
+
 ## Formulas
 
 - Important formulas must be drafted as LaTeX fragments first, then converted into editable Word equations (`m:oMath` / `m:oMathPara`), not screenshots and not plain text.
@@ -41,11 +60,35 @@
 
 ## Tables
 
-- Use real Word tables or spreadsheet-derived tables.
-- Put table captions above tables, for example `Table 1. Dataset descriptions`.
-- Avoid plain-text tables made with spaces.
+Use real Word tables (`w:tbl`), never plain-text tables made with spaces or tabs. Spreadsheet-derived tables that round-trip through Word's "paste as table" are also acceptable.
+
+### Three-line table style (default)
+
+Academic experiment reports in this template use the **three-line table** convention from scientific publishing. Only horizontal borders are visible; all vertical borders and inner horizontal borders are removed. The three retained borders are:
+
+1. **Top border** — above the header row, 1.5 pt single line.
+2. **Header–body separator** — below the header row, 0.75 pt single line.
+3. **Bottom border** — below the last data row, 1.5 pt single line.
+
+In OOXML this means each cell sets `<w:tcBorders>` with:
+
+- `top` and `bottom` set to `nil` for body cells (the row-level top/bottom only applies on the first/last rows).
+- `left`, `right`, `insideH`, `insideV` set to `nil` everywhere.
+- The header row's bottom border set to `single` 0.75 pt.
+- The first data row's top border `nil` (the header bottom is the visible separator).
+- The last data row's bottom border set to `single` 1.5 pt.
+- The first row's top border set to `single` 1.5 pt.
+
+Avoid the default Word "Table Grid" style — its inner gridlines violate the three-line rule. If your generation pipeline starts from `Table Grid`, override the borders explicitly per cell rather than relying on a named style.
+
+### Other table rules
+
+- Put table captions **above** the table, for example `Table 1. Dataset descriptions`. Captions are not first-line indented.
 - Set table width, column widths, padding, and wrapping explicitly when generating OOXML.
+- Header row text is bold and horizontally centered. Body cell text is left-aligned for strings, right-aligned or decimal-aligned for numbers.
+- Add modest cell padding (about 80 twips top/bottom) so text does not touch the rules.
 - Check that table text is not clipped or pinned to borders.
+- Avoid merged cells unless the data really requires them; the three-line layout assumes a regular grid.
 
 ## Final QA Checklist
 
@@ -53,11 +96,12 @@
 - Required four report sections present.
 - Body content is English.
 - Headings are numbered and bold.
-- Body font is consistent.
+- Body font is consistent and body paragraphs use 1.27 cm first-line indentation.
 - No raw LaTeX syntax visible.
 - Editable Word equation objects are present when the report contains important formulas.
 - Figures have lower captions.
-- Tables have upper captions.
+- Tables have upper captions and use three-line table borders (no inner verticals, no inner horizontals between data rows).
+- Pseudocode and core code blocks render with the shaded code style described in `code-and-pseudocode.md`.
 - No abnormal large blanks.
 - Final `.docx` opens successfully.
 - LibreOffice/Word-rendered preview confirms that the first page and outer report frame are still visible.

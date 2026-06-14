@@ -59,6 +59,17 @@ When multiple experiments exist, write each one as a separate numbered subsectio
 
 For normal reports, the body should be substantial. A machine-learning report with four algorithms should usually include several pages of method explanation, experiment process, result discussion, and conclusion. If the draft feels short, deepen it by adding theory-code linkage, parameter reasoning, metric interpretation, confusion-matrix analysis, error analysis, limitations, and possible improvements.
 
+### Required visual coverage per subsection
+
+The richness gate enforces a minimum visual / quantitative bar in every subsection. See `visualization-strategy.md` for the full list; the short version is:
+
+- **3.1 Data Loading and Preprocessing** — class / target distribution chart, missing-value visualization, numeric-feature distribution panel, correlation heatmap when sensible, outlier plot for the features that motivated cleaning steps, and a three-line split summary table.
+- **3.2 Model / Algorithm Experiment** — architecture or pipeline diagram, **pseudocode block per non-trivial method** (shaded code style), hyperparameter table, and a training-curve or learning-curve figure when the model is iterative. Include a core-code excerpt for at least one method.
+- **3.3 Parameter Comparison** — parameter-sweep curves (one panel per parameter), a heatmap when sweeping two parameters jointly, and a stability / sensitivity boxplot when seeds were varied.
+- **3.4 Result Visualization and Analysis** — confusion matrix per classifier, per-class precision / recall / F1 three-line table, overall-metric comparison bar chart, ROC or precision-recall curves when probabilities are available, feature-importance / coefficient / permutation chart, and an error-analysis figure that surfaces which classes or feature regions are most often misclassified.
+
+Each figure or table needs 2–4 sentences of interpretation immediately after it. Tables use the three-line style (top rule, header-body separator, bottom rule; no inner verticals or extra horizontals). Pseudocode and core code excerpts use the shaded style described in `code-and-pseudocode.md`.
+
 ## 4. Discussion and Conclusions
 
 Write a concise conclusion in a university student voice:
@@ -69,3 +80,5 @@ Write a concise conclusion in a university student voice:
 - Mention limitations, possible improvements, and what was learned.
 
 Avoid exaggerated claims. Do not use marketing language or unsupported performance statements.
+
+Include at least one cross-method summary table (three-line style) restating the headline numbers, and ideally a trade-off chart (for example accuracy vs. training time, or accuracy vs. robustness). These visuals make the conclusion concrete; without them this section often shrinks into vague prose, which the richness gate flags.
