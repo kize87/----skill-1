@@ -87,6 +87,10 @@ Use the scripted text-only path instead:
 
 `read_pdf_text.py` falls back through `pdftotext` → `pdfminer.six` → `pypdf`, so as long as one of those three is reachable on `pip` you get clean text on stdout.
 
+### Optional: enforce the rule with a hook
+
+The `SKILL.md` rule only kicks in once Claude has loaded the skill. On a fresh session Claude often calls `Read('Task 2.pdf')` *before* reading SKILL.md and the session dies with HTTP 400. To make the rule physically unavoidable, install the bundled PreToolUse hook from `hooks/` into your project (or globally). The hook refuses `Read` on `.pdf` / `.docx` / `.doc` at the tool layer and tells Claude which script to use instead. See `hooks/README.md` for the two-line install.
+
 ---
 
 ## Layout

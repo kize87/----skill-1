@@ -31,6 +31,8 @@ Use the script-based path instead — the data flows as plain text, so every bac
 
 If a tool result still arrives as a `document` block (for example because the user attached a file directly to the conversation), do not pass it back into another tool call's input on a non-Claude backend — extract the relevant text first or ask the user to drop the file into the working directory and refer to it by path.
 
+For sessions that need a guarantee rather than a guideline (because Claude often calls `Read` on PDFs before reading SKILL.md), the skill ships an optional PreToolUse hook in `hooks/`. Copying it into `<project>/.claude/hooks/` and merging `hooks/settings.fragment.json` into `<project>/.claude/settings.json` blocks `Read` on `.pdf` / `.docx` / `.doc` at the tool layer, regardless of model or prompt. See `hooks/README.md` for install steps.
+
 ## Inputs To Discover
 
 Scan the working directory before asking the user questions. Identify:
